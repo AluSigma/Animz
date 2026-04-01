@@ -40,9 +40,9 @@ const apiGet = async (path) => {
   return response.json()
 }
 
-const asArray = (value) => (Array.isArray(value) ? value : [])
+const ensureArray = (value) => (Array.isArray(value) ? value : [])
 
-const getAnimeList = (data) => asArray(data?.animes || data?.data?.animes || data?.result?.animes)
+const getAnimeList = (data) => ensureArray(data?.animes || data?.data?.animes || data?.result?.animes)
 
 const getPagination = (data) => data?.pagination || data?.data?.pagination || data?.result?.pagination || {}
 
@@ -73,6 +73,11 @@ const getStreamType = (rawUrl = '') => {
   if (/\.m3u8(\?|$)/i.test(value)) return 'hls'
   if (/youtube\.com\/embed|player\.vimeo\.com|streamtape|dood|filemoon|ok\.ru|mp4upload|gdriveplayer/i.test(value)) return 'iframe'
   return 'iframe'
+}
+
+const clampIndex = (index, length) => {
+  if (!length) return 0
+  return Math.max(0, Math.min(index, length - 1))
 }
 
 const useFetch = (key, loader) => {
@@ -290,8 +295,8 @@ const DetailPage = ({ slug }) => {
   if (result.loading) return <LoadingState />
   if (result.error) return <ErrorState message={result.error} />
   const data = getDetailData(result.data)
-  const episodes = asArray(data.episodes)
-  const genres = asArray(data.genres).map(getGenreLabel).filter(Boolean)
+  const episodes = ensureArray(data.episodes)
+  const genres = ensureArray(data.genres).map(getGenreLabel).filter(Boolean)
   const score = data.score || data.rating || '-'
   return (
     <motion.section className="panel" {...fadeInUp}>
@@ -334,17 +339,43 @@ const EpisodePage = ({ slug }) => {
   const decoded = decodeURIComponent(slug || '')
   const result = useFetch(`episode-${decoded}`, () => apiGet(`/episode/${decoded}`))
   const [selected, setSelected] = useState(0)
+  const videoRef = useRef(null)
 
-  if (result.loading) return <LoadingState />
-  if (result.error) return <ErrorState message={result.error} />
   const data = getEpisodeData(result.data)
-  const streams = asArray(data.streams)
-  const safeSelected = Math.min(selected, Math.max(streams.length - 1, 0))
+  const streams = ensureArray(data.streams)
+  const safeSelected = clampIndex(selected, streams.length)
   const active = streams[safeSelected]
   const activeUrl = active?.url || ''
   const streamType = getStreamType(activeUrl)
   const iframeSrc = extractIframeSrc(activeUrl)
-  const videoSrc = streamType === 'hls' || streamType === 'video' ? iframeSrc : ''
+  const videoSrc = streamType === 'video' ? iframeSrc : ''
+
+  useEffect(() => {
+    if (selected !== safeSelected) setSelected(safeSelected)
+  }, [selected, safeSelected])
+
+  useEffect(() => {
+    if (streamType !== 'hls' || !iframeSrc || !videoRef.current) return undefined
+    let destroyed = false
+    let hlsInstance
+    if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+      videoRef.current.src = iframeSrc
+      return undefined
+    }
+    import('hls.js').then(({ default: Hls }) => {
+      if (destroyed || !videoRef.current || !Hls.isSupported()) return
+      hlsInstance = new Hls()
+      hlsInstance.loadSource(iframeSrc)
+      hlsInstance.attachMedia(videoRef.current)
+    })
+    return () => {
+      destroyed = true
+      hlsInstance?.destroy()
+    }
+  }, [streamType, iframeSrc, safeSelected])
+
+  if (result.loading) return <LoadingState />
+  if (result.error) return <ErrorState message={result.error} />
   return (
     <MotionSection className="panel" {...fadeInUp}>
       <h2>{data?.title || result.data?.title || 'Episode'}</h2>
@@ -352,10 +383,10 @@ const EpisodePage = ({ slug }) => {
         <>
           <div className="player-wrap">
             {active ? (
-              videoSrc ? (
-                <video controls playsInline className="video-player">
-                  <source src={videoSrc} type={streamType === 'hls' ? 'application/vnd.apple.mpegurl' : 'video/mp4'} />
-                </video>
+              streamType === 'hls' ? (
+                <video key={`hls-${safeSelected}`} ref={videoRef} controls playsInline className="video-player" />
+              ) : videoSrc ? (
+                <video key={`video-${safeSelected}`} ref={videoRef} src={videoSrc} controls playsInline className="video-player" />
               ) : streamType === 'iframe' && iframeSrc ? (
                 <iframe title={active.name} src={iframeSrc} className="frame-player" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
               ) : (
@@ -367,7 +398,7 @@ const EpisodePage = ({ slug }) => {
           </div>
           <div className="stream-list">
             {streams.map((stream, index) => (
-              <button key={`${stream.name}-${index}`} className={`stream-btn ${index === safeSelected ? 'stream-btn--active' : ''}`} onClick={() => setSelected(index)}>
+              <button key={`${stream.name}-${index}`} className={`stream-btn ${index === safeSelected ? 'stream-btn--active' : ''}`} onClick={() => setSelected(clampIndex(index, streams.length))}>
                 {stream.name}
               </button>
             ))}
