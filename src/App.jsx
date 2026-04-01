@@ -56,13 +56,43 @@ const getGenreLabel = (genre) => {
   return ''
 }
 
+const TRUSTED_IFRAME_HOSTS = [
+  'www.youtube.com',
+  'youtube.com',
+  'player.vimeo.com',
+  'streamtape.com',
+  'doodstream.com',
+  'filemoon.sx',
+  'ok.ru',
+  'mp4upload.com',
+  'gdriveplayer.us',
+]
+
+const toSafeHttpUrl = (value = '') => {
+  if (!value) return ''
+  try {
+    const parsed = new URL(value, window.location.origin)
+    if (!['http:', 'https:'].includes(parsed.protocol)) return ''
+    return parsed.href
+  } catch {
+    return ''
+  }
+}
+
+const isTrustedIframeUrl = (value = '') => {
+  const safe = toSafeHttpUrl(value)
+  if (!safe) return false
+  const host = new URL(safe).hostname.toLowerCase()
+  return TRUSTED_IFRAME_HOSTS.some((trusted) => host === trusted || host.endsWith(`.${trusted}`))
+}
+
 const extractIframeSrc = (value = '') => {
   if (!value) return ''
   if (/<iframe/i.test(value)) {
     const match = value.match(/src=["']([^"']+)["']/i)
-    return match?.[1] || ''
+    return toSafeHttpUrl(match?.[1] || '')
   }
-  return value
+  return toSafeHttpUrl(value)
 }
 
 const getStreamType = (rawUrl = '') => {
@@ -339,6 +369,7 @@ const EpisodePage = ({ slug }) => {
   const decoded = decodeURIComponent(slug || '')
   const result = useFetch(`episode-${decoded}`, () => apiGet(`/episode/${decoded}`))
   const [selected, setSelected] = useState(0)
+  const [hlsError, setHlsError] = useState('')
   const videoRef = useRef(null)
 
   const data = getEpisodeData(result.data)
@@ -349,12 +380,11 @@ const EpisodePage = ({ slug }) => {
   const streamType = getStreamType(activeUrl)
   const iframeSrc = extractIframeSrc(activeUrl)
   const videoSrc = streamType === 'video' ? iframeSrc : ''
+  const safeExternalUrl = toSafeHttpUrl(activeUrl)
+  const trustedIframe = streamType === 'iframe' && isTrustedIframeUrl(iframeSrc)
 
   useEffect(() => {
-    if (selected !== safeSelected) setSelected(safeSelected)
-  }, [selected, safeSelected])
-
-  useEffect(() => {
+    setHlsError('')
     if (streamType !== 'hls' || !iframeSrc || !videoRef.current) return undefined
     let destroyed = false
     let hlsInstance
@@ -367,6 +397,11 @@ const EpisodePage = ({ slug }) => {
       hlsInstance = new Hls()
       hlsInstance.loadSource(iframeSrc)
       hlsInstance.attachMedia(videoRef.current)
+      hlsInstance.on(Hls.Events.ERROR, (_, data) => {
+        if (data?.fatal) setHlsError('Gagal memutar stream HLS. Coba server lain.')
+      })
+    }).catch(() => {
+      if (!destroyed) setHlsError('Gagal memuat pemutar HLS. Coba server lain.')
     })
     return () => {
       destroyed = true
@@ -384,21 +419,24 @@ const EpisodePage = ({ slug }) => {
           <div className="player-wrap">
             {active ? (
               streamType === 'hls' ? (
-                <video key={`hls-${safeSelected}`} ref={videoRef} controls playsInline className="video-player" />
+                <>
+                  <video key={`hls-${safeSelected}`} ref={videoRef} controls playsInline className="video-player" />
+                  {hlsError ? <div className="empty-state">{hlsError}</div> : null}
+                </>
               ) : videoSrc ? (
                 <video key={`video-${safeSelected}`} ref={videoRef} src={videoSrc} controls playsInline className="video-player" />
-              ) : streamType === 'iframe' && iframeSrc ? (
-                <iframe title={active.name} src={iframeSrc} className="frame-player" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
+              ) : trustedIframe ? (
+                <iframe title={active.name} src={iframeSrc} className="frame-player" allow="autoplay; fullscreen; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
               ) : (
                 <div className="empty-state">
-                  Stream tidak dapat diputar langsung. <a href={activeUrl} target="_blank" rel="noreferrer">Buka sumber</a>
+                  Stream tidak dapat diputar langsung. {safeExternalUrl ? <a href={safeExternalUrl} target="_blank" rel="noreferrer">Buka sumber</a> : null}
                 </div>
               )
             ) : null}
           </div>
           <div className="stream-list">
             {streams.map((stream, index) => (
-              <button key={`${stream.name}-${index}`} className={`stream-btn ${index === safeSelected ? 'stream-btn--active' : ''}`} onClick={() => setSelected(clampIndex(index, streams.length))}>
+              <button key={`${stream.name}-${index}`} className={`stream-btn ${index === safeSelected ? 'stream-btn--active' : ''}`} onClick={() => setSelected(index)}>
                 {stream.name}
               </button>
             ))}
