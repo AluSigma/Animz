@@ -68,6 +68,8 @@ const TRUSTED_IFRAME_HOSTS = [
   'gdriveplayer.us',
 ]
 
+let hlsModulePromise
+
 const toSafeHttpUrl = (value = '') => {
   if (!value) return ''
   try {
@@ -83,7 +85,7 @@ const isTrustedIframeUrl = (value = '') => {
   const safe = toSafeHttpUrl(value)
   if (!safe) return false
   const host = new URL(safe).hostname.toLowerCase()
-  return TRUSTED_IFRAME_HOSTS.some((trusted) => host === trusted || host.endsWith(`.${trusted}`))
+  return TRUSTED_IFRAME_HOSTS.some((trusted) => host === trusted || (host.length > trusted.length && host.endsWith(`.${trusted}`)))
 }
 
 const extractIframeSrc = (value = '') => {
@@ -392,7 +394,8 @@ const EpisodePage = ({ slug }) => {
       videoRef.current.src = iframeSrc
       return undefined
     }
-    import('hls.js').then(({ default: Hls }) => {
+    hlsModulePromise ||= import('hls.js')
+    hlsModulePromise.then(({ default: Hls }) => {
       if (destroyed || !videoRef.current || !Hls.isSupported()) return
       hlsInstance = new Hls()
       hlsInstance.loadSource(iframeSrc)
@@ -426,7 +429,7 @@ const EpisodePage = ({ slug }) => {
               ) : videoSrc ? (
                 <video key={`video-${safeSelected}`} ref={videoRef} src={videoSrc} controls playsInline className="video-player" />
               ) : trustedIframe ? (
-                <iframe title={active.name} src={iframeSrc} className="frame-player" allow="autoplay; fullscreen; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
+                <iframe title={active.name} src={iframeSrc} className="frame-player" allow="autoplay; fullscreen; picture-in-picture" sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
               ) : (
                 <div className="empty-state">
                   Stream tidak dapat diputar langsung. {safeExternalUrl ? <a href={safeExternalUrl} target="_blank" rel="noreferrer">Buka sumber</a> : null}
@@ -436,7 +439,7 @@ const EpisodePage = ({ slug }) => {
           </div>
           <div className="stream-list">
             {streams.map((stream, index) => (
-              <button key={`${stream.name}-${index}`} className={`stream-btn ${index === safeSelected ? 'stream-btn--active' : ''}`} onClick={() => setSelected(index)}>
+              <button key={stream.url || `${stream.name}-${index}`} className={`stream-btn ${index === safeSelected ? 'stream-btn--active' : ''}`} onClick={() => setSelected(index)}>
                 {stream.name}
               </button>
             ))}
