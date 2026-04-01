@@ -121,15 +121,19 @@ const fadeInUp = {
   transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] },
 }
 
+const MotionSection = motion.section
+const MotionDiv = motion.div
+const MotionLink = motion.a
+
 const AnimeCard = ({ anime, href }) => (
-  <motion.a className="anime-card" href={href} whileHover={{ y: -6, scale: 1.01 }} transition={{ duration: 0.22 }}>
+  <MotionLink className="anime-card" href={href} whileHover={{ y: -6, scale: 1.01 }} transition={{ duration: 0.22 }}>
     <img src={anime.poster} alt={anime.title} loading="lazy" />
     <div className="anime-card__meta">
       <h3>{anime.title}</h3>
       <p>{anime.episode || anime.type || '-'}</p>
       <span>{anime.status_or_day || anime.status || '-'}</span>
     </div>
-  </motion.a>
+  </MotionLink>
 )
 
 const Pagination = ({ page, hasNext, baseView, extra = {} }) => (
@@ -151,11 +155,11 @@ const OngoingPage = ({ query }) => {
   if (result.error) return <ErrorState message={result.error} />
   const animes = getAnimeList(result.data)
   return (
-    <motion.section className="panel" {...fadeInUp}>
+    <MotionSection className="panel" {...fadeInUp}>
       <h2>Ongoing Anime</h2>
       {animes.length ? <div className="grid">{animes.map((anime) => <AnimeCard key={anime.slug} anime={anime} href={buildHash('detail', { slug: anime.slug })} />)}</div> : <EmptyState text="Belum ada data ongoing." />}
       <Pagination page={page} hasNext={Boolean(getPagination(result.data)?.hasNext)} baseView="ongoing" />
-    </motion.section>
+    </MotionSection>
   )
 }
 
@@ -165,10 +169,10 @@ const PopularPage = () => {
   if (result.error) return <ErrorState message={result.error} />
   const animes = getAnimeList(result.data)
   return (
-    <motion.section className="panel" {...fadeInUp}>
+    <MotionSection className="panel" {...fadeInUp}>
       <h2>Popular Anime</h2>
       {animes.length ? <div className="grid">{animes.map((anime) => <AnimeCard key={anime.slug} anime={anime} href={buildHash('detail', { slug: anime.slug })} />)}</div> : <EmptyState text="Data popular kosong." />}
-    </motion.section>
+    </MotionSection>
   )
 }
 
@@ -180,11 +184,11 @@ const MoviesPage = ({ query }) => {
   const animes = getAnimeList(result.data)
   const hasNext = getPagination(result.data)?.hasNext ?? animes.length > 0
   return (
-    <motion.section className="panel" {...fadeInUp}>
+    <MotionSection className="panel" {...fadeInUp}>
       <h2>Anime Movies</h2>
       {animes.length ? <div className="grid">{animes.map((anime) => <AnimeCard key={anime.slug} anime={anime} href={buildHash('detail', { slug: anime.slug })} />)}</div> : <EmptyState text="Data movie kosong." />}
       <Pagination page={page} hasNext={Boolean(hasNext)} baseView="movies" />
-    </motion.section>
+    </MotionSection>
   )
 }
 
@@ -193,7 +197,7 @@ const SearchPage = ({ query }) => {
   const result = useFetch(`search-${keyword}`, () => (keyword ? apiGet(`/search/${encodeURIComponent(keyword)}`) : Promise.resolve({ animes: [] })))
   const animes = getAnimeList(result.data)
   return (
-    <motion.section className="panel" {...fadeInUp}>
+    <MotionSection className="panel" {...fadeInUp}>
       <h2>Pencarian Anime</h2>
       <form action="#/search" className="search-form">
         <input type="text" name="q" defaultValue={keyword} placeholder="Cari judul anime..." />
@@ -211,7 +215,7 @@ const SearchPage = ({ query }) => {
           <EmptyState text="Tidak ada hasil pencarian." />
         )
       ) : null}
-    </motion.section>
+    </MotionSection>
   )
 }
 
@@ -224,18 +228,18 @@ const AnimeListPage = ({ query }) => {
   )
   if (result.loading) {
     return (
-      <motion.section className="panel" {...fadeInUp}>
+      <MotionSection className="panel" {...fadeInUp}>
         <h2>Anime A-Z</h2>
         <div className="letters">{LETTERS.map((item) => <a key={item} className={`letter ${item === selectedLetter ? 'letter--active' : ''}`} href={buildHash('animelist', { letter: item })}>{item}</a>)}</div>
         <LoadingState />
-      </motion.section>
+      </MotionSection>
     )
   }
   if (result.error) return <ErrorState message={result.error} />
   const animes = getAnimeList(result.data)
   const hasNext = getPagination(result.data)?.hasNext ?? animes.length > 0
   return (
-    <motion.section className="panel" {...fadeInUp}>
+    <MotionSection className="panel" {...fadeInUp}>
       <h2>Anime A-Z</h2>
       <div className="letters">
         {LETTERS.map((item) => (
@@ -246,7 +250,7 @@ const AnimeListPage = ({ query }) => {
       </div>
       {animes.length ? <div className="grid">{animes.map((anime) => <AnimeCard key={anime.slug} anime={anime} href={buildHash('detail', { slug: anime.slug })} />)}</div> : <EmptyState text={`Belum ada anime untuk huruf ${selectedLetter}.`} />}
       <Pagination page={page} hasNext={Boolean(hasNext)} baseView="animelist" extra={{ letter: selectedLetter }} />
-    </motion.section>
+    </MotionSection>
   )
 }
 
@@ -256,7 +260,7 @@ const SchedulePage = () => {
   if (result.error) return <ErrorState message={result.error} />
   const schedule = result.data?.schedule || {}
   return (
-    <motion.section className="panel" {...fadeInUp}>
+    <MotionSection className="panel" {...fadeInUp}>
       <h2>Jadwal Rilis Mingguan</h2>
       <div className="schedule-wrap">
         {DAY_ORDER.map((day) => (
@@ -276,7 +280,7 @@ const SchedulePage = () => {
           </article>
         ))}
       </div>
-    </motion.section>
+    </MotionSection>
   )
 }
 
@@ -331,10 +335,6 @@ const EpisodePage = ({ slug }) => {
   const result = useFetch(`episode-${decoded}`, () => apiGet(`/episode/${decoded}`))
   const [selected, setSelected] = useState(0)
 
-  useEffect(() => {
-    setSelected(0)
-  }, [decoded])
-
   if (result.loading) return <LoadingState />
   if (result.error) return <ErrorState message={result.error} />
   const data = getEpisodeData(result.data)
@@ -346,7 +346,7 @@ const EpisodePage = ({ slug }) => {
   const iframeSrc = extractIframeSrc(activeUrl)
   const videoSrc = streamType === 'hls' || streamType === 'video' ? iframeSrc : ''
   return (
-    <motion.section className="panel" {...fadeInUp}>
+    <MotionSection className="panel" {...fadeInUp}>
       <h2>{data?.title || result.data?.title || 'Episode'}</h2>
       {streams.length ? (
         <>
@@ -376,7 +376,7 @@ const EpisodePage = ({ slug }) => {
       ) : (
         <EmptyState text="Link stream tidak tersedia." />
       )}
-    </motion.section>
+    </MotionSection>
   )
 }
 
@@ -386,8 +386,8 @@ const HomePage = () => {
   const schedule = useFetch('home-schedule', () => apiGet('/schedule'))
 
   return (
-    <motion.section className="home" {...fadeInUp}>
-      <motion.div className="hero" initial={{ opacity: 0, scale: 0.985 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
+    <MotionSection className="home" {...fadeInUp}>
+      <MotionDiv className="hero" initial={{ opacity: 0, scale: 0.985 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
         <div className="hero__shine" />
         <h1>Animz Streaming</h1>
         <p>
@@ -402,7 +402,7 @@ const HomePage = () => {
             Cari Anime
           </a>
         </div>
-      </motion.div>
+      </MotionDiv>
 
       <section className="panel">
         <div className="panel-head">
@@ -460,7 +460,7 @@ const HomePage = () => {
           </div>
         )}
       </section>
-    </motion.section>
+    </MotionSection>
   )
 }
 
@@ -519,9 +519,9 @@ function App() {
       </header>
       <main>
         <AnimatePresence mode="wait">
-          <motion.div key={`${activeRoute.view}-${activeRoute.slug}-${activeRoute.query.toString()}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }}>
+          <MotionDiv key={`${activeRoute.view}-${activeRoute.slug}-${activeRoute.query.toString()}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }}>
             {content}
-          </motion.div>
+          </MotionDiv>
         </AnimatePresence>
       </main>
       <footer className="footer">Streaming UI by Animz • API Animasu</footer>
