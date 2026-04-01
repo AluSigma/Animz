@@ -1,9 +1,10 @@
 .app-shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 10% 10%, rgba(140, 82, 255, 0.2), transparent 45%),
-    radial-gradient(circle at 90% 0%, rgba(0, 245, 212, 0.16), transparent 40%),
-    linear-gradient(180deg, #080810 0%, #0f1020 100%);
+    radial-gradient(circle at 8% 2%, rgba(132, 95, 255, 0.35), transparent 42%),
+    radial-gradient(circle at 95% -8%, rgba(0, 218, 255, 0.22), transparent 36%),
+    radial-gradient(circle at 50% 120%, rgba(255, 128, 210, 0.14), transparent 42%),
+    linear-gradient(180deg, #05060f 0%, #0b1023 45%, #0b0f1f 100%);
   color: #eff2ff;
 }
 
@@ -18,8 +19,9 @@
   gap: 0.75rem;
   padding: 1rem 1.25rem;
   backdrop-filter: blur(14px);
-  background: rgba(10, 11, 24, 0.72);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(7, 9, 20, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
 }
 
 .brand {
@@ -74,9 +76,11 @@ main {
   overflow: hidden;
   border-radius: 20px;
   padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: linear-gradient(140deg, rgba(122, 61, 255, 0.34), rgba(9, 12, 38, 0.9));
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background:
+    linear-gradient(145deg, rgba(122, 61, 255, 0.4), rgba(9, 12, 38, 0.92)),
+    radial-gradient(circle at 80% 20%, rgba(146, 240, 255, 0.18), transparent 36%);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.34);
   animation: floatIn 0.65s ease;
 }
 
@@ -119,14 +123,16 @@ main {
   background: linear-gradient(135deg, #8edbff, #c8a5ff);
   font-weight: 700;
   font-size: 0.9rem;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.52rem 0.9rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 8px 22px rgba(122, 167, 255, 0.2);
 }
 
 .btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 26px rgba(161, 170, 255, 0.3);
+  box-shadow: 0 12px 28px rgba(161, 170, 255, 0.38);
+  filter: saturate(1.1);
 }
 
 .btn--ghost {
@@ -141,9 +147,12 @@ main {
 
 .panel {
   border-radius: 16px;
-  padding: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(13, 15, 34, 0.68);
+  padding: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(13, 16, 36, 0.86), rgba(9, 12, 29, 0.84)),
+    rgba(13, 15, 34, 0.68);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   animation: fadeUp 0.42s ease;
 }
 
@@ -176,15 +185,17 @@ main {
   overflow: hidden;
   text-decoration: none;
   color: inherit;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transform: translateY(0);
-  transition: transform 0.25s ease, border-color 0.25s ease;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .anime-card:hover {
   transform: translateY(-4px);
   border-color: rgba(142, 219, 255, 0.6);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.3);
 }
 
 .anime-card img {
@@ -194,7 +205,8 @@ main {
 }
 
 .anime-card__meta {
-  padding: 0.7rem;
+  padding: 0.8rem;
+  background: linear-gradient(180deg, transparent, rgba(2, 5, 16, 0.3));
 }
 
 .anime-card h3 {
@@ -234,10 +246,16 @@ main {
 .search-form input {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.07);
   border-radius: 10px;
   color: #eef2ff;
   padding: 0.58rem 0.8rem;
+}
+
+.search-form input:focus {
+  outline: none;
+  border-color: rgba(142, 219, 255, 0.72);
+  box-shadow: 0 0 0 4px rgba(142, 219, 255, 0.14);
 }
 
 .letters {
@@ -271,7 +289,7 @@ main {
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.72rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .day-card ul {
@@ -292,6 +310,8 @@ main {
 .detail-header img {
   width: 100%;
   border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
 }
 
 .tags {
@@ -327,14 +347,14 @@ main {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  min-height: 300px;
+  min-height: 360px;
   background: #000;
 }
 
 .video-player,
 .frame-player {
   width: 100%;
-  min-height: 300px;
+  min-height: 360px;
   border: 0;
 }
 
@@ -346,7 +366,7 @@ main {
 
 .stream-btn {
   border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: #e8edff;
   border-radius: 999px;
   padding: 0.34rem 0.65rem;
@@ -371,7 +391,7 @@ main {
 .schedule-mini__item {
   border-radius: 10px;
   padding: 0.62rem;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -410,6 +430,7 @@ main {
   padding: 1rem;
   color: #a8b2e0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(6, 8, 17, 0.7);
 }
 
 @keyframes pulseGlow {
